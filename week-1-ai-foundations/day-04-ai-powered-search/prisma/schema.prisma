@@ -1,0 +1,23 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Prisma has no native "vector" type. Unsupported("...") tells Prisma:
+// "create this column with exactly this raw SQL type, but don't try to
+// generate typed read/write helpers for it." That means `db push` will
+// still create the column correctly, but every query that touches
+// `embedding` has to be written as raw SQL — see src/documents and
+// src/search for how that's done with $queryRaw.
+model Document {
+  id        Int      @id @default(autoincrement())
+  content   String
+  embedding Unsupported("vector(768)")?
+  createdAt DateTime @default(now())
+
+  @@map("documents")
+}
