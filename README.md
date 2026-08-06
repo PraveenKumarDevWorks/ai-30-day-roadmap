@@ -49,7 +49,7 @@ The existing **Deep dive: how it actually works** section stays too, as the deta
 |-----|------|-------|----------|------|
 | 1 | 1 | ✅ LLM API integration | Frontend | `week-1-ai-foundations/day-01-llm-api-integration` |
 | 2 | 1 | ✅ Prompt engineering basics | Frontend | `week-1-ai-foundations/day-02-prompt-engineering-basics` |
-| 3 | 1 | Streaming text responses | Frontend | `week-1-ai-foundations/day-03-streaming-text-responses` |
+| 3 | 1 | ✅ Streaming text responses | Frontend | `week-1-ai-foundations/day-03-streaming-text-responses` |
 | 4 | 1 | AI-powered search | Full Stack | `week-1-ai-foundations/day-04-ai-powered-search` |
 | 5 | 1 | Text summarization feature | Frontend | `week-1-ai-foundations/day-05-text-summarization-feature` |
 | 6 | 1 | Sentiment analysis API | Backend | `week-1-ai-foundations/day-06-sentiment-analysis-api` |
