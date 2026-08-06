@@ -13,19 +13,28 @@ week-3-ai-agents-automation/     AI Agents & Automation
 week-4-production-ai-scale-quality/  Production AI — Scale & Quality
 ```
 
-Each week folder has 7-9 `day-NN-<title>/` folders. Each day folder has a `README.md` with:
+Each week folder has 7-9 `day-NN-<title>/` folders. Each day folder starts with a `README.md` that has:
 
 - **What to build** — the concrete feature for that day
 - **Deep-dive topics** — the concepts to actually understand, not just copy-paste
 - **Stack** — which tools from the list above apply
-- **Notes / learnings** — fill this in as you build; this becomes the permanent record of what you did and why
+
+Once a day's project is actually built, its README gets **4 more sections added** — this is the template every finished day follows, so update to match it (see `week-1-ai-foundations/day-01-llm-api-integration/README.md` for a full example):
+
+1. **Explain it like I'm 10** — the same feature explained with a simple everyday analogy, no jargon
+2. **How it flows (diagram)** — a Mermaid diagram (GitHub renders it natively, no image file needed) showing the request/response flow step by step
+3. **If someone wakes you up at midnight and quizzes you** — a rehearsed Q&A cheat sheet: the questions someone would likely ask about the project, with short clear answers, so you can explain it on the spot without re-reading the code
+4. **Using other models (hints)** — brief hints/examples for adapting the same feature to other models or providers (other Ollama models, OpenAI, Claude API) — just enough to point the direction, not a full build-out
+
+Plus the existing **Deep dive: how it actually works** section stays as the detailed technical walkthrough — the 4 sections above are added alongside it, not instead of it.
 
 ## Setup: Ollama
 
 1. Install Ollama: https://ollama.com/download
-2. Pull a general-purpose model for chat/agents, e.g. `ollama pull llama3.1`
-3. Pull an embedding model for RAG/search days, e.g. `ollama pull nomic-embed-text`
+2. Pull a general-purpose model for chat/agents — Praveen's setup uses `ollama pull llama3.2`
+3. Pull an embedding model for RAG/search days — `ollama pull nomic-embed-text`
 4. Ollama runs a local REST API on `http://localhost:11434` — no API key needed
+5. Make sure `ollama serve` is actually running before starting any project's dev server, or API calls fail with `ECONNREFUSED`. Check what's pulled with `ollama list`.
 
 ## Working through the roadmap
 
@@ -38,7 +47,7 @@ Each week folder has 7-9 `day-NN-<title>/` folders. Each day folder has a `READM
 
 | Day | Week | Title | Category | Path |
 |-----|------|-------|----------|------|
-| 1 | 1 | LLM API integration | Frontend | `week-1-ai-foundations/day-01-llm-api-integration` |
+| 1 | 1 | ✅ LLM API integration | Frontend | `week-1-ai-foundations/day-01-llm-api-integration` |
 | 2 | 1 | Prompt engineering basics | Frontend | `week-1-ai-foundations/day-02-prompt-engineering-basics` |
 | 3 | 1 | Streaming text responses | Frontend | `week-1-ai-foundations/day-03-streaming-text-responses` |
 | 4 | 1 | AI-powered search | Full Stack | `week-1-ai-foundations/day-04-ai-powered-search` |
