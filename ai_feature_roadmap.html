@@ -1,0 +1,179 @@
+
+<style>
+  .road { padding: 1rem 0; font-family: var(--font-sans); }
+  .week-header { display: flex; align-items: center; gap: 10px; margin: 1.5rem 0 0.75rem; }
+  .week-badge { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; }
+  .week-title { font-size: 15px; font-weight: 500; color: var(--color-text-primary); }
+  .day-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+  .day-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 10px 12px; cursor: pointer; transition: border-color 0.15s; }
+  .day-card:hover { border-color: var(--color-border-secondary); }
+  .day-card.done { opacity: 0.5; }
+  .day-num { font-size: 11px; color: var(--color-text-tertiary); margin-bottom: 3px; }
+  .day-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 3px; }
+  .day-tag { font-size: 11px; padding: 2px 7px; border-radius: 10px; display: inline-block; }
+  .tag-fe { background: #E6F1FB; color: #0C447C; }
+  .tag-be { background: #E1F5EE; color: #085041; }
+  .tag-full { background: #EEEDFE; color: #3C3489; }
+  .tag-infra { background: #FAEEDA; color: #633806; }
+  .check { float: right; font-size: 14px; color: var(--color-text-tertiary); }
+  .done .check { color: #1D9E75; }
+  .progress-bar { height: 6px; background: var(--color-background-secondary); border-radius: 3px; margin-bottom: 1.5rem; overflow: hidden; }
+  .progress-fill { height: 100%; background: #1D9E75; border-radius: 3px; transition: width 0.3s; }
+  .progress-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 6px; }
+  .detail-panel { background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin: 1rem 0; display: none; }
+  .detail-panel.open { display: block; }
+  .detail-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 6px; }
+  .detail-body { font-size: 13px; color: var(--color-text-secondary); line-height: 1.6; }
+  .action-btn { font-size: 12px; margin-top: 10px; padding: 5px 12px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: transparent; color: var(--color-text-primary); cursor: pointer; }
+  .action-btn:hover { background: var(--color-background-primary); }
+</style>
+
+<div class="road">
+  <h2 class="sr-only">30-day AI feature learning roadmap for software engineers</h2>
+
+  <div class="progress-label" id="prog-label">0 of 30 days completed</div>
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+
+  <div id="detail" class="detail-panel">
+    <div class="detail-title" id="detail-title"></div>
+    <div class="detail-body" id="detail-body"></div>
+    <button class="action-btn" id="detail-ask">Ask Claude about this day ↗</button>
+  </div>
+
+  <div id="roadmap"></div>
+</div>
+
+<script>
+const weeks = [
+  {
+    label: "Week 1",
+    theme: "AI Foundations — Text & APIs",
+    color: "tag-fe",
+    badgeBg: "#E6F1FB", badgeColor: "#0C447C",
+    days: [
+      { title: "LLM API integration", tag: "fe", desc: "Call Claude/OpenAI API from a Next.js API route. Stream the response to the frontend using ReadableStream. Build a simple chat UI with Tailwind." },
+      { title: "Prompt engineering basics", tag: "fe", desc: "Learn zero-shot, few-shot, and chain-of-thought prompting. Build a prompt playground UI where you can switch modes and compare outputs side by side." },
+      { title: "Streaming text responses", tag: "fe", desc: "Implement SSE (Server-Sent Events) or ReadableStream in Next.js. Show typewriter effect on the frontend. Useful for any AI chat interface." },
+      { title: "AI-powered search", tag: "full", desc: "Build semantic search using embeddings. Store vectors in PostgreSQL with pgvector. Query by similarity. This is the foundation of most AI search products." },
+      { title: "Text summarization feature", tag: "fe", desc: "Build a summarize-this-page feature. Accept URL or pasted text, call the LLM, show bullet-point summary. Add copy-to-clipboard." },
+      { title: "Sentiment analysis API", tag: "be", desc: "NestJS endpoint that takes text, calls LLM with a structured prompt, returns sentiment score + label as JSON. Add Redis cache so repeated text doesn't re-call the API." },
+      { title: "Revision day", tag: "full", desc: "Review days 1–6. Polish one of the features. Write a short CLAUDE.md for your AI project so Claude Code can assist future sessions better." },
+    ]
+  },
+  {
+    label: "Week 2",
+    theme: "RAG & Knowledge Features",
+    color: "tag-full",
+    badgeBg: "#EEEDFE", badgeColor: "#3C3489",
+    days: [
+      { title: "Document ingestion pipeline", tag: "be", desc: "Accept PDF/text upload in NestJS. Chunk the text. Generate embeddings via OpenAI or local model. Store in PostgreSQL (pgvector). This is step 1 of RAG." },
+      { title: "Basic RAG chatbot", tag: "full", desc: "Retrieve top-k relevant chunks from pgvector. Feed them as context to the LLM. Build a Q&A chat UI. The LLM answers only from your documents." },
+      { title: "Conversation memory", tag: "full", desc: "Store chat history in Redis with TTL. Inject last N messages as context on each API call. Simulate short-term memory for your chatbot." },
+      { title: "Multi-doc RAG", tag: "be", desc: "Let users upload multiple documents. Tag each chunk with doc ID. Filter retrieval by document. Useful for product like Comixo where each business has their own docs." },
+      { title: "RAG with reranking", tag: "be", desc: "After fetching top-k chunks, rerank them using a cross-encoder model. Improves answer quality significantly. Integrate Cohere rerank API or a local model." },
+      { title: "AI FAQ generator", tag: "full", desc: "Given a document, auto-generate 10 FAQs + answers. Store them. Build a FAQ widget for the frontend. One of the most useful features for SaaS products." },
+      { title: "Revision day", tag: "full", desc: "Review RAG pipeline end to end. Draw a system diagram. Identify where Redis, Kafka, or gRPC could improve the architecture." },
+    ]
+  },
+  {
+    label: "Week 3",
+    theme: "AI Agents & Automation",
+    color: "tag-be",
+    badgeBg: "#E1F5EE", badgeColor: "#085041",
+    days: [
+      { title: "Function calling / tool use", tag: "be", desc: "Give the LLM tools: get_order_status, get_menu, check_inventory. LLM decides which tool to call. NestJS handles the execution. Very powerful for Cookr/Comixo use cases." },
+      { title: "Simple AI agent loop", tag: "be", desc: "Build a ReAct-style agent: Think → Act → Observe → Repeat. The agent calls tools until it has an answer. Implement in NestJS with a while loop and tool registry." },
+      { title: "Email automation agent", tag: "full", desc: "Agent reads an email (mocked), decides action (reply, escalate, ignore), drafts a response. Tie into your existing Google Apps Script email work for a real use case." },
+      { title: "Scheduled AI jobs", tag: "be", desc: "Use NestJS cron + Bull queue + Kafka to run daily AI tasks (e.g. summarize yesterday's orders, flag anomalies). Publish results to a Redis channel." },
+      { title: "AI data extractor", tag: "be", desc: "Given messy text (receipts, forms, chat messages), extract structured JSON using LLM with a strict output schema. Add Zod validation on the NestJS side." },
+      { title: "Code review agent", tag: "full", desc: "Agent reads a GitHub PR diff, gives feedback on code quality, security issues, and naming. Call GitHub API for the diff. Use LLM to review. Return structured comments." },
+      { title: "Revision day", tag: "full", desc: "Review agents and automation. Think about which agent pattern fits Comixo. Write a design doc: input → tools → output → storage for one real use case." },
+    ]
+  },
+  {
+    label: "Week 4",
+    theme: "Production AI — Scale & Quality",
+    color: "tag-infra",
+    badgeBg: "#FAEEDA", badgeColor: "#633806",
+    days: [
+      { title: "LLM output validation", tag: "be", desc: "Use Zod + Instructor pattern to force structured JSON output from LLM. Handle malformed responses with retry logic. Never trust raw LLM output in production." },
+      { title: "AI rate limiting & cost control", tag: "be", desc: "Track token usage per user in Redis. Set limits per plan. Return 429 when exceeded. Log usage to PostgreSQL for billing. Real SaaS pattern." },
+      { title: "Prompt version management", tag: "full", desc: "Store prompts in DB with versions. A/B test two prompt versions on 50/50 traffic. Log which prompt gave better outcomes. Improve prompts without redeploying." },
+      { title: "AI response caching", tag: "be", desc: "Hash the prompt + context. Check Redis before calling LLM. Return cached response if hit. Saves cost and improves latency for repeated queries." },
+      { title: "Observability for AI", tag: "infra", desc: "Log every LLM call: prompt, response, latency, token count, model. Build a simple dashboard in Next.js that shows usage trends. Add LangSmith or custom tracing." },
+      { title: "AI feature flags", tag: "full", desc: "Use Redis to toggle AI features on/off per tenant. Comixo can enable AI for some food businesses and not others. Combine with rate limits for a full tier system." },
+      { title: "Fine-tuning intro", tag: "be", desc: "Prepare a small dataset of prompt-response pairs. Fine-tune a small model using OpenAI fine-tune API or Hugging Face. Understand when fine-tuning beats prompting." },
+      { title: "Final project day", tag: "full", desc: "Build one complete AI feature end-to-end: ingest docs → RAG → agent tool → streaming UI → cache → rate limit → logs. This is your portfolio piece. Document it well." },
+      { title: "Portfolio & blog post", tag: "full", desc: "Write a dev.to or LinkedIn post about what you built. Update your portfolio site (the 3D one) with an AI section. Push all code to GitHub with a good README." },
+    ]
+  }
+];
+
+const tagLabel = { fe: "Frontend", be: "Backend", full: "Full Stack", infra: "Infra" };
+const tagClass = { fe: "tag-fe", be: "tag-be", full: "tag-full", infra: "tag-infra" };
+
+const state = JSON.parse(localStorage?.getItem?.('ai_roadmap') || 'null') || {};
+
+function save() { try { localStorage.setItem('ai_roadmap', JSON.stringify(state)); } catch(e) {} }
+
+function updateProgress() {
+  const done = Object.values(state).filter(Boolean).length;
+  document.getElementById('prog-fill').style.width = (done / 30 * 100) + '%';
+  document.getElementById('prog-label').textContent = done + ' of 30 days completed';
+}
+
+let openDay = null;
+
+function render() {
+  const root = document.getElementById('roadmap');
+  root.innerHTML = '';
+  let dayNum = 0;
+  weeks.forEach(week => {
+    const wh = document.createElement('div');
+    wh.className = 'week-header';
+    wh.innerHTML = `<span class="week-badge" style="background:${week.badgeBg};color:${week.badgeColor}">${week.label}</span><span class="week-title">${week.theme}</span>`;
+    root.appendChild(wh);
+
+    const grid = document.createElement('div');
+    grid.className = 'day-grid';
+    week.days.forEach(day => {
+      dayNum++;
+      const id = 'day-' + dayNum;
+      const isDone = state[id];
+      const card = document.createElement('div');
+      card.className = 'day-card' + (isDone ? ' done' : '');
+      card.innerHTML = `
+        <div class="day-num">Day ${dayNum}</div>
+        <span class="check ti ${isDone ? 'ti-circle-check' : 'ti-circle'}" aria-hidden="true"></span>
+        <div class="day-title">${day.title}</div>
+        <span class="day-tag ${tagClass[day.tag]}">${tagLabel[day.tag]}</span>
+      `;
+      card.addEventListener('click', () => {
+        if (openDay === id) {
+          openDay = null;
+          document.getElementById('detail').classList.remove('open');
+        } else {
+          openDay = id;
+          document.getElementById('detail-title').textContent = `Day ${dayNum}: ${day.title}`;
+          document.getElementById('detail-body').textContent = day.desc;
+          document.getElementById('detail-ask').onclick = () => sendPrompt(`Start Day ${dayNum}: ${day.title} — ${day.desc}`);
+          document.getElementById('detail').classList.add('open');
+          document.getElementById('detail').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      });
+      card.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        state[id] = !state[id];
+        save();
+        render();
+        updateProgress();
+      });
+      grid.appendChild(card);
+    });
+    root.appendChild(grid);
+  });
+}
+
+render();
+updateProgress();
+</script>
