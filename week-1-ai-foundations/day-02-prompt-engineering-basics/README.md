@@ -60,6 +60,26 @@ All three requests go out at the same time (`Promise.all`). So all three columns
 
 ---
 
+## Backend flow: how one request actually travels
+
+A plain, step-by-step trace of what happens for ONE of the three prompt-mode calls — all three follow this exact same path, just at the same time, with a different prompt text each.
+
+1. **The "Run all three" click starts three separate calls.** `runAll()` calls `runOne('zero-shot')`, `runOne('few-shot')`, and `runOne('chain-of-thought')` together via `Promise.all`. We'll trace just one of them — say, `zero-shot`.
+2. **The prompt gets built entirely in the browser, before anything is sent.** `buildPrompt('zero-shot', task)` (from `lib/prompts.ts`) wraps the task text in the zero-shot instruction. This happens on the client side — no network call yet.
+3. **The browser sends the request.** `fetch('/api/complete', { method: 'POST', body: JSON.stringify({ prompt, temperature, top_p }) })`.
+4. **Next.js matches this to `app/api/complete/route.ts`'s `POST` function**, the same file-based routing idea from Day 1 — the file's path (`app/api/complete/route.ts`) IS the URL (`/api/complete`).
+5. **The route handler reads the request body**, pulling out `prompt`, `temperature`, and `top_p` (with defaults if they're missing).
+6. **The route handler sends its own outgoing request — to Ollama, not back to the browser.** `fetch(OLLAMA_BASE_URL + '/api/generate', { ..., options: { temperature, top_p } })`. This is a second, separate HTTP request, this time from our Next.js server to Ollama on port 11434.
+7. **Ollama starts streaming its answer back**, one small JSON line at a time (`{"response":"...", "done":false}` lines). The route handler reads these, pulls out just the `response` text from each line, and immediately writes that text into a new outgoing stream — exactly the same buffering pattern as Day 1, just reading the `response` field instead of `message.content`.
+8. **That new stream becomes the HTTP response sent back to the browser**, piece by piece, as it's produced.
+9. **Back in the browser, `runOne()` reads the response stream in a loop**, and for every piece of text that arrives, updates only that one mode's entry in the `outputs` state object — which is why the three columns can each be mid-stream at once without mixing up each other's text.
+
+### Why does this look almost identical to Day 1's flow?
+
+Because it basically is — the only real differences are: `/api/generate` instead of `/api/chat` (one prompt string instead of a message list), a `response` field instead of `message.content`, and `temperature`/`top_p` riding along in the request. Once you understand one streaming route handler, you understand the shape of all of them — only the specific endpoint and field names change from provider to provider.
+
+---
+
 ## If someone wakes you up at midnight and quizzes you
 
 **Q: What is prompt engineering, in one line?**

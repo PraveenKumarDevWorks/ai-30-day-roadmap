@@ -81,6 +81,37 @@ sequenceDiagram
 
 ---
 
+## Backend flow: how one request actually travels
+
+A plain, step-by-step trace of what happens, in order, for each of the two panels — not the ELI10 version, the actual code path.
+
+**A few words first:** a **route handler** is a file in `app/api/.../route.ts` that becomes a real URL Next.js listens for. A **stream** here always means: the connection stays open, and data arrives in small pieces over time, instead of one single reply all at once.
+
+### Flow A: "Fetch + ReadableStream" panel
+
+1. **The button click starts it.** `FetchStreamPanel`'s `run()` function calls `fetch('/api/stream-raw', { method: 'POST', body: ... })`.
+2. **Next.js matches the URL to a file.** Because the file is at `app/api/stream-raw/route.ts` and exports a `POST` function, Next.js runs that function for any `POST /api/stream-raw` request. No manual routing code needed — the file's location and name ARE the route.
+3. **The route handler makes its own outgoing request.** Inside `route.ts`, `fetch(OLLAMA_BASE_URL + '/api/generate', { ... stream: true })` sends a brand new HTTP request — this time from our Next.js server to Ollama, a separate program on port 11434. `await` pauses this function until Ollama's response starts arriving.
+4. **Ollama starts sending pieces of text back, one small JSON line at a time.** The route handler doesn't wait for the whole answer — it reads what's available so far with `ollamaReader.read()`, pulls the actual text out of each JSON line, and immediately pushes just that text into a brand-new `ReadableStream` — the one this route function returns as its response.
+5. **That new stream becomes the HTTP response body sent back to the browser** — piece by piece, as it's produced, not all at once at the end.
+6. **The browser's `fetch()` call resolves almost immediately** (as soon as headers arrive) with a `Response` object whose `body` is still an open stream. `run()` calls `res.body.getReader()` and loops, calling `reader.read()` again and again, handing each new piece of text to the typewriter hook's `push()`.
+7. **If `simulateDrop` is on:** step 3's route handler deliberately calls `controller.error(...)` partway through. This breaks the stream Next.js is sending to the browser. The browser's `reader.read()` call in step 6 then throws — caught by the `try/catch` in `run()`, which sets `status` to `'error'`. Nothing retries on its own; a person has to click "Retry manually."
+
+### Flow B: "Server-Sent Events" panel
+
+1. **The button click creates an `EventSource`**, not a `fetch()` call: `new EventSource('/api/stream-sse?prompt=...')`. `EventSource` is a browser built-in specifically for this format — it always sends GET, and it manages the connection itself.
+2. **Next.js matches this to `app/api/stream-sse/route.ts`'s exported `GET` function**, the same file-based routing idea as Flow A, just a `GET` export instead of `POST`.
+3. **The route handler reads the prompt from the URL** (`req.nextUrl.searchParams.get('prompt')`) instead of a request body, since `EventSource` has no way to send one.
+4. **Same Ollama call as Flow A underneath** — `fetch(... '/api/generate' ..., stream: true)` — but this time each piece of text gets wrapped as `data: {"token":"..."}\n\n` before being sent, which is the exact text format `EventSource` expects.
+5. **The browser's `EventSource` parses each `data: ...` block itself** and fires the `onmessage` callback we registered — no manual `reader.read()` loop needed, unlike Flow A. Each message's `token` gets pushed into the typewriter hook.
+6. **If `simulateDrop` is on:** the route handler calls `controller.close()` early, without sending `data: [DONE]`. `EventSource` notices the connection ended unexpectedly, and — entirely inside the browser, no code of ours involved — waits the number of milliseconds from the earlier `retry: 2000` line, then opens a brand-new `GET` request to the same URL by itself. Our `onerror` handler just watches this happen via `es.readyState` and updates the on-screen status; it doesn't trigger the retry itself.
+
+### Why does one panel need manual retry logic and the other doesn't?
+
+`fetch()` is a general-purpose tool — it has no built-in opinion about "what should happen if this stream breaks," so that decision (retry, show an error, give up) is entirely up to the code that calls it. `EventSource` was built for exactly one purpose — consuming this kind of long-lived text stream — so the browser bakes reconnect behavior directly into it. That's the real trade-off this whole project is demonstrating: more control and simplicity (`fetch`) versus more built-in behavior for less code (`EventSource`).
+
+---
+
 ## If someone wakes you up at midnight and quizzes you
 
 **Q: What is SSE, in one line?**

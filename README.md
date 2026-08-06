@@ -19,14 +19,15 @@ Each week folder has 7-9 `day-NN-<title>/` folders. Each day folder starts with 
 - **Deep-dive topics** — the ideas to actually understand, not just copy-paste
 - **Stack** — which tools from the list above are used
 
-Once a day's project is built, its README gets **4 more sections added**. Every finished day follows this same template (see `week-1-ai-foundations/day-01-llm-api-integration/README.md` as a full example). All writing uses simple, plain English — short sentences, easy words, easy to read:
+Once a day's project is built, its README gets **5 more sections added**. Every finished day follows this same template (see `week-1-ai-foundations/day-01-llm-api-integration/README.md` as a full example). All writing uses simple, plain English — short sentences, easy words, easy to read:
 
 1. **Explain it like I'm 10** — the same feature explained with a simple, everyday example, no hard words
 2. **How it flows (diagram)** — a Mermaid diagram (GitHub shows it directly, no image file needed) showing the steps from request to reply
-3. **If someone wakes you up at midnight and quizzes you** — a practice Q&A list: the questions someone would likely ask about the project, with short, clear answers, so you can explain it on the spot without opening the code
-4. **Using other AI models (hints)** — short hints and examples for using the same feature with other AI models and providers beyond Ollama — hosted APIs (OpenAI, Claude, Gemini, Groq, Mistral) and other local tools (LM Studio, vLLM, llama.cpp) — just enough to point the way, not a full build
+3. **Backend flow: how one request actually travels** — a plain, step-by-step trace of what happens in the actual code, in order, from the moment a request leaves the browser to the moment the answer comes back — file by file, explaining what each step does and why it exists. Written for someone who only knows backend a little, so basic words (route, controller, request, decorator, and so on) get explained inline the first time they show up. This is different from the ELI10 section (that's an analogy) and different from the diagram (that's the big picture) — this section is the actual code path.
+4. **If someone wakes you up at midnight and quizzes you** — a practice Q&A list: the questions someone would likely ask about the project, with short, clear answers, so you can explain it on the spot without opening the code
+5. **Using other AI models (hints)** — short hints and examples for using the same feature with other AI models and providers beyond Ollama — hosted APIs (OpenAI, Claude, Gemini, Groq, Mistral) and other local tools (LM Studio, vLLM, llama.cpp) — just enough to point the way, not a full build
 
-The existing **Deep dive: how it actually works** section stays too, as the detailed technical walkthrough. The 4 sections above are added next to it, not instead of it.
+The existing **Deep dive: how it actually works** section stays too, organized by file rather than by request flow — good as a reference once you already understand the flow. The 5 sections above are added next to it, not instead of it.
 
 ## Setup: Ollama
 

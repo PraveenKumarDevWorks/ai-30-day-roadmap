@@ -58,6 +58,24 @@ Read it from top to bottom: you ask one question. Then there is a loop where sma
 
 ---
 
+## Backend flow: how one request actually travels
+
+This is the plain, step-by-step version — what actually happens in the code, in order, not the robot story.
+
+**A few words first, since this is the first project in the roadmap:** a **route handler** is a file inside `app/api/...` that Next.js turns into a real URL by itself, just from its file path — no separate routing code to write. `app/api/chat/route.ts` becomes the URL `/api/chat`, automatically. Exporting a function named `POST` from that file means "run this function whenever someone sends a POST request to that URL."
+
+1. **You type a message and hit send.** `page.tsx`'s `sendMessage()` function runs, and calls `fetch('/api/chat', { method: 'POST', body: JSON.stringify({ messages }) })`. This leaves the browser as one HTTP request.
+2. **Next.js finds the matching file.** It sees a POST request to `/api/chat`, and knows — purely from the file being at `app/api/chat/route.ts` and exporting a `POST` function — to run that function.
+3. **The route handler reads the request.** `const { messages } = await req.json()` pulls the conversation array out of the request body.
+4. **The route handler sends its OWN request — to a different program entirely.** `fetch(OLLAMA_BASE_URL + '/api/chat', { ..., stream: true })` sends a brand new, separate HTTP request from our Next.js server to Ollama, a completely different program listening on port 11434. `await` here means: pause this function right where it is, and wait for Ollama's response to start arriving.
+5. **Ollama starts replying — not all at once, but as a stream of small pieces.** The route handler doesn't wait for the whole answer. It reads what's arrived so far with `ollamaReader.read()`, pulls the actual text out of each small JSON line Ollama sends, and immediately writes that text into a brand-new stream (`new ReadableStream({...})`) — the thing this route function returns as its own response.
+6. **That new stream becomes the HTTP response sent back to the browser** — piece by piece, as text is produced, not held until the very end.
+7. **Back in the browser, `sendMessage()` reads that response as a stream too**, in a loop (`while (true) { const { done, value } = await reader.read() ... }`), and appends each new piece of text onto the last chat message in React state — which is what makes the reply appear on screen word by word.
+
+Two separate programs are involved here: our Next.js server, and Ollama. They never talk to each other except over this one HTTP call in step 4 — which is exactly why swapping Ollama for a different AI provider later (see "Using other AI models" below) only means changing this one file, nothing else.
+
+---
+
 ## If someone wakes you up at midnight and quizzes you
 
 Practice these until you can answer without thinking.

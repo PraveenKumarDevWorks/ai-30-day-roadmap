@@ -66,6 +66,87 @@ sequenceDiagram
 
 ---
 
+## Backend flow: how one request actually travels
+
+This section is for the backend side specifically — a plain, step-by-step trace of what happens, in order, from the moment a request leaves the browser to the moment an answer comes back. No skipped steps.
+
+**A few words first, since these come up constantly:**
+
+- **HTTP request** — a message the browser (or any program) sends to a server. It has a method (GET, POST, ...), a URL, and sometimes a body (data attached, usually JSON).
+- **Server** — a program that sits and waits for HTTP requests, and sends back a response for each one. Here, that's our NestJS app, running on port 3001.
+- **Route** — one specific address the server understands, like `POST /documents`. The server keeps a list of these and picks the right one based on the method and URL of each incoming request.
+- **Decorator** — the `@Controller()`, `@Post()`, `@Get()` labels above our class and method names. NestJS reads these once, when the app starts, to build its internal map of "which URL goes to which function." They are not run like normal step-by-step code.
+
+### Why Docker, why Prisma, and how they connect
+
+This is the first project in the roadmap with a real database, so it's worth being clear about what these two new tools are actually doing, before tracing requests through them.
+
+**Why Docker?**
+
+Postgres is not something that lives inside our Node.js app — it's a completely separate program that needs to be installed and running on its own, listening for connections. Installing a database directly on your own computer is messy: different versions clash with each other, uninstalling leaves files behind, and getting the pgvector extension working on top of a manually-installed Postgres usually means compiling things from source.
+
+Docker solves this by packaging a full, working copy of Postgres — with pgvector already built in — into something called a **container**: a small, isolated, pre-configured environment that runs exactly the same way on any computer. `docker-compose.yml` is the recipe for that container: which image to use (`pgvector/pgvector:pg16`), which port to expose (5432), and which username/password/database name to set up automatically the first time it starts. Running `docker compose up -d` starts it in seconds. Running `docker compose down` removes it completely — nothing else gets left behind on your machine, unlike a manual install.
+
+**Why Prisma?**
+
+Our NestJS code needs to talk to Postgres somehow. Without a tool like Prisma, that means writing raw SQL strings by hand everywhere, manually opening and closing database connections, manually converting between JavaScript values and SQL types, and manually being careful about SQL injection every single time. Prisma sits between our code and the database and handles all of that: it manages the connection for us, and — normally — generates matching TypeScript types from our schema so we get autocomplete and compile-time errors if we misspell a column name.
+
+`prisma/schema.prisma` is where the `documents` table is described once. From that one file, Prisma can create the real table in Postgres (`npx prisma db push`) and generate a matching TypeScript client library (`npx prisma generate`) that our code imports. The one exception, as covered above, is the `embedding` column — since Prisma has no native vector type, that one column falls back to raw SQL. Everything else about Prisma (connection handling, safe parameter binding, the generated client) still applies normally.
+
+**How the whole chain actually connects, in order:**
+
+1. `docker compose up -d` starts a real Postgres server process, running inside a container, reachable at `localhost:5432` on your own machine (the `ports: - '5432:5432'` line in `docker-compose.yml` is what makes the container's internal port reachable from outside it).
+2. `.env`'s `DATABASE_URL` is Prisma's "address book entry" for that server: `postgresql://postgres:postgres@localhost:5432/day4_search` says the protocol, username, password, host, port, and database name, all in one string.
+3. `npx prisma generate` reads `prisma/schema.prisma` and writes a matching client library into `node_modules/@prisma/client`. This step never touches the database at all — it's pure code generation from the schema file sitting on disk.
+4. When the NestJS app actually starts, `PrismaService` (which extends the generated `PrismaClient`) calls `this.$connect()` inside `onModuleInit()`. **This is the exact moment a real network connection to Postgres gets opened**, using the `DATABASE_URL` from step 2.
+5. From then on, every `$queryRaw` call anywhere in our services reuses that same connection (Prisma manages a small pool of them) to send SQL to Postgres inside the Docker container, and get rows back.
+6. When the app shuts down, `onModuleDestroy()` calls `this.$disconnect()`, closing the connection cleanly.
+
+So the full chain is: **Docker runs Postgres → `DATABASE_URL` tells Prisma where to find it → `prisma generate` builds the client code → `PrismaService` opens the actual connection on startup → our services' `$queryRaw` calls travel over that connection → Postgres (still just a program sitting inside the Docker container) does the real work and sends rows back.**
+
+### Flow A: adding a document — `POST /documents`
+
+1. **The browser sends the request.** The HTML page's `addDoc()` function calls `fetch('/documents', { method: 'POST', body: JSON.stringify({ content }) })`. This leaves the browser as one HTTP request.
+
+2. **NestJS's router finds the matching function.** When the app started (`src/main.ts` ran `NestFactory.create(AppModule)`), Nest had already scanned every controller and built a table of "method + URL → function." It sees `POST /documents` and matches it to `DocumentsController.create()`, because that class has `@Controller('documents')` and that method has `@Post()`.
+
+3. **The ValidationPipe checks the data BEFORE our code runs.** `main.ts` registered `app.useGlobalPipes(new ValidationPipe(...))` for the whole app. Nest runs this on every request that expects a DTO, before the controller method is called. It checks the incoming JSON against `CreateDocumentDto` — content must be a string, at least 3 characters. If it fails, the request is rejected right here, and `DocumentsController.create()` never runs at all. This is why the controller doesn't need its own "is this valid?" check — that job is already finished by the time it's called.
+
+4. **The controller runs — and does almost nothing on purpose.** `DocumentsController.create(dto)` just calls `this.documentsService.create(dto.content)` and returns whatever comes back. A controller's only job is "receive the request, hand it off." Keeping it this thin means the real logic lives in exactly one place (the service), not copied into every route that might need it.
+
+5. **The service starts the real work — by calling a completely different program.** `DocumentsService.create()` calls `this.ollama.embed(content)`. This sends a second, separate HTTP request — this time our NestJS server is the sender, and Ollama (a different program, listening on port 11434) is the receiver. `await` here means: pause this function right where it is, and don't continue until Ollama's answer comes back.
+
+6. **Ollama replies with a list of numbers.** `OllamaService.embed()` reads the `embedding` field out of Ollama's JSON response and returns it as a plain array of 768 numbers.
+
+7. **The array gets turned into text pgvector understands.** `toVectorLiteral(embedding)` turns `[0.1, 0.2, ...]` into the string `"[0.1,0.2,...]"`. No network involved — just formatting.
+
+8. **The service sends a THIRD request — this time to the database.** `this.prisma.$queryRaw` sends an `INSERT ... RETURNING` SQL statement to Postgres (yet another separate program, listening on port 5432). Postgres creates the row and sends back its new `id` and `content`.
+
+9. **The result travels back up, unchanged, through every layer it came from.** Postgres → Prisma → `DocumentsService.create()` returns it → `DocumentsController.create()` returns it → Nest turns it into JSON automatically → sent back as the HTTP response → the browser's `fetch()` call resolves with it.
+
+Three separate programs took part in this one request — NestJS, Ollama, and Postgres — each one waiting for the previous step to finish before doing its part. That whole chain is "the backend" for this one feature.
+
+### Flow B: searching — `GET /search?q=...`
+
+Same idea, slightly different shape:
+
+1. Browser calls `fetch('/search?q=' + encodeURIComponent(q))` — a GET request, so there's no body. The search text travels inside the URL itself, as a query parameter.
+2. Nest's router matches this to `SearchController.search()`, and `@Query('q')` pulls the `q` value straight out of the URL.
+3. There's no DTO here, so no ValidationPipe step. Instead the controller checks it by hand: `if (!q) throw new BadRequestException(...)` — a single query parameter is simple enough not to need a whole DTO class.
+4. `SearchController.search()` calls `SearchService.search(q, limit)`.
+5. `SearchService` calls `OllamaService.embed(q)` — the exact same embedding call as Flow A, just on the search text instead of a document.
+6. `SearchService` runs `SELECT ... ORDER BY embedding <=> ... LIMIT ...` as one raw query. Postgres compares the new vector against every stored row and hands back only the closest matches, already sorted, in a single trip.
+7. The service turns each row's `distance` into `similarity` and returns the array.
+8. That array flows back up through the controller, becomes the JSON response, and the HTML page's `doSearch()` function draws it on screen.
+
+### Why bother with all these separate layers?
+
+- If `DocumentsController` talked to Ollama and Postgres directly itself, that same code would need to be copied into every other route that ever needed to add a document. The service exists so that logic lives in exactly one place.
+- If validation happened inside the service instead, every single service method would need its own hand-written validation. The ValidationPipe does it once, automatically, for every route that declares a DTO.
+- Because NestJS, Ollama, and Postgres are three separate programs talking over HTTP and SQL — not one giant program — any one of them can be swapped out without touching the others. Swap Ollama for OpenAI, or Postgres for a different database, and the rest of this chain barely notices.
+
+---
+
 ## If someone wakes you up at midnight and quizzes you
 
 **Q: What is an embedding, in one line?**
