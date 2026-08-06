@@ -24,7 +24,7 @@ Once a day's project is actually built, its README gets **4 more sections added*
 1. **Explain it like I'm 10** — the same feature explained with a simple everyday analogy, no jargon
 2. **How it flows (diagram)** — a Mermaid diagram (GitHub renders it natively, no image file needed) showing the request/response flow step by step
 3. **If someone wakes you up at midnight and quizzes you** — a rehearsed Q&A cheat sheet: the questions someone would likely ask about the project, with short clear answers, so you can explain it on the spot without re-reading the code
-4. **Using other models (hints)** — brief hints/examples for adapting the same feature to other models or providers (other Ollama models, OpenAI, Claude API) — just enough to point the direction, not a full build-out
+4. **Using other models (hints)** — brief hints/examples for adapting the same feature to other AI models and providers beyond Ollama — hosted APIs (OpenAI, Claude, Gemini, Groq, Mistral) and other local runners (LM Studio, vLLM, llama.cpp) — just enough to point the direction, not a full build-out
 
 Plus the existing **Deep dive: how it actually works** section stays as the detailed technical walkthrough — the 4 sections above are added alongside it, not instead of it.
 

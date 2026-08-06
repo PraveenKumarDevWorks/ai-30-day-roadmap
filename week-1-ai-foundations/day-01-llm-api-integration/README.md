@@ -136,34 +136,42 @@ Standard React state (`messages`, `input`, `isStreaming`). On submit, it POSTs t
 
 ---
 
-## Using other models (just hints — not built here)
+## Using other AI models (just hints — not built here)
 
-This whole project only needed one thing to change to use a different Ollama model: the `OLLAMA_MODEL` value in `.env.local`. The route handler and the chat page don't need to change at all.
+This project talks to Ollama, but the design keeps all "talk to the AI" logic inside one file (`route.ts`). That means swapping in a completely different AI model or provider — not just a different Ollama model — is a small, contained change. The chat page (`page.tsx`) never needs to change at all, no matter which AI is behind it.
 
-**Switch to a different local Ollama model**
+Here's the same feature adapted to several other models, from smallest change to biggest:
+
+**1. A different model, still inside Ollama**
 
 ```
 ollama pull mistral        # or phi3, gemma2, qwen2.5, etc.
 ```
 
-Then in `.env.local`:
+Then in `.env.local`: `OLLAMA_MODEL=mistral`. Restart `npm run dev`. Nothing else changes — same NDJSON format, same code.
 
-```
-OLLAMA_MODEL=mistral
-```
+**2. A different local runner (not Ollama at all)**
 
-That's it — restart `npm run dev` and you're chatting with a different model.
+Tools like **LM Studio** and **vLLM** also run models on your own machine and both can expose an **OpenAI-compatible** endpoint (`/v1/chat/completions`). If you point at one of those, use the OpenAI-format parsing described below instead of Ollama's NDJSON format — everything stays local and free, you're just running a different server.
 
-**Hint: swap Ollama for OpenAI's API**
+**3. OpenAI's API (hosted, paid)**
 
-OpenAI's streaming format is Server-Sent Events (SSE), not NDJSON — each line looks like `data: {"choices":[{"delta":{"content":"Hel"}}]}` and ends with `data: [DONE]`. You'd change three things in `route.ts`:
+OpenAI streams using Server-Sent Events (SSE), not NDJSON — each line looks like `data: {"choices":[{"delta":{"content":"Hel"}}]}` and ends with `data: [DONE]`. Three changes in `route.ts`:
 
-1. The fetch URL: `https://api.openai.com/v1/chat/completions`
+1. Fetch URL: `https://api.openai.com/v1/chat/completions`
 2. Add a header: `Authorization: Bearer ${process.env.OPENAI_API_KEY}`
-3. The parsing loop: strip the `data: ` prefix from each line, skip the `[DONE]` line, and read `.choices[0].delta.content` instead of `.message.content`
+3. Parsing loop: strip the `data: ` prefix, skip the `[DONE]` line, read `.choices[0].delta.content` instead of `.message.content`
 
-Everything else — the outgoing `ReadableStream`, the buffering logic, the chat page — stays exactly the same. That's the whole point of keeping the "talk to the AI" logic in one file.
+**4. Anthropic's Claude API (hosted, paid)**
 
-**Hint: swap Ollama for Anthropic's Claude API**
+Endpoint `https://api.anthropic.com/v1/messages`, headers `x-api-key` and `anthropic-version`. Streaming events are typed (`content_block_delta`, `message_stop`, etc.) rather than one uniform shape, so the parsing loop needs a `switch` on event type — same overall pattern otherwise.
 
-Similar idea. Endpoint is `https://api.anthropic.com/v1/messages`, with headers `x-api-key` and `anthropic-version`. Its streaming events are typed (`content_block_delta`, `message_stop`, etc.) rather than one uniform shape, so the parsing loop needs a `switch` on the event type — but the overall pattern (read stream → pull out text → re-stream to browser) is identical to what's already built here.
+**5. Google Gemini (hosted, has a free tier)**
+
+Endpoint `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent`, API key as a query param. Streams a JSON array incrementally rather than clean NDJSON/SSE lines, so parsing is a little fiddlier — but the shape of the solution (read stream → pull out text → re-stream to browser) is unchanged.
+
+**6. Groq or Mistral's hosted APIs (hosted, fast/cheap)**
+
+Both are OpenAI-compatible — same SSE format as OpenAI above, just a different base URL and API key. If you've already done the OpenAI hint, swapping to either of these is a one-line URL change.
+
+The pattern across all of these: **only the "call the model and parse its stream" logic changes.** The outgoing `ReadableStream` to the browser, the buffering approach, and the entire frontend stay identical — that separation is the actual lesson of Day 1, more than Ollama specifically.
