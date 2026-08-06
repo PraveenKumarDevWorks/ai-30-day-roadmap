@@ -53,7 +53,7 @@ The existing **Deep dive: how it actually works** section stays too, organized b
 | 3 | 1 | ✅ Streaming text responses | Frontend | `week-1-ai-foundations/day-03-streaming-text-responses` |
 | 4 | 1 | ✅ AI-powered search | Full Stack | `week-1-ai-foundations/day-04-ai-powered-search` |
 | 5 | 1 | ✅ Text summarization feature | Frontend | `week-1-ai-foundations/day-05-text-summarization-feature` |
-| 6 | 1 | Sentiment analysis API | Backend | `week-1-ai-foundations/day-06-sentiment-analysis-api` |
+| 6 | 1 | ✅ Sentiment analysis API | Backend | `week-1-ai-foundations/day-06-sentiment-analysis-api` |
 | 7 | 1 | Revision day | Full Stack | `week-1-ai-foundations/day-07-revision-day` |
 | 8 | 2 | Document ingestion pipeline | Backend | `week-2-rag-knowledge-features/day-08-document-ingestion-pipeline` |
 | 9 | 2 | Basic RAG chatbot | Full Stack | `week-2-rag-knowledge-features/day-09-basic-rag-chatbot` |
