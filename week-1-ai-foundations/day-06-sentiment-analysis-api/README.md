@@ -145,6 +145,8 @@ NestJS, Redis, Ollama
 - `format: 'json'` is an Ollama-specific option that most people miss — without it, you're relying purely on prompt wording ("respond with JSON only") to get valid syntax, which works most of the time but not always. With it, syntax is guaranteed by the model's generation process itself, not just requested politely.
 - The cache key normalizes text (`trim().toLowerCase()`) before hashing, so "Great service!" and "great service!" share a cache entry instead of being treated as two different inputs — a small design choice with a real effect on how often the cache actually gets hit.
 
+**Polished on Day 7 (revision day):** `AnalyzeSentimentDto.text` originally had no upper length limit — nothing stopped someone from pasting a huge amount of text, which would silently exceed Ollama's context window instead of failing clearly. Added `@MaxLength(3000)` with a message pointing at Day 5's chunking approach for anything genuinely long. Since the `ValidationPipe` was already wired up globally in `main.ts`, this was a one-line, low-risk fix — a good example of a small gap that's easy to miss when a feature is first built, but obvious once you look for it.
+
 ---
 
 ## Using other AI models (just hints — not built here)
