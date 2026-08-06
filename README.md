@@ -1,8 +1,8 @@
 # AI Projects — 30-Day Roadmap
 
-A 30-day, hands-on roadmap to go from "can call an LLM API" to "can ship production AI features." Every project uses **Ollama** for local LLM inference (free, no API keys, runs on your own machine) instead of paid APIs like OpenAI or Claude, wherever the original idea called for a hosted model.
+A 30-day, hands-on roadmap. The goal: go from "can call an LLM API" to "can ship real AI features." Every project uses **Ollama** to run AI models on your own computer — free, no API keys — instead of paid APIs like OpenAI or Claude, wherever the original plan asked for a hosted model.
 
-Stack used throughout: Next.js, React, Angular, JS, TS, Tailwind, Redux, React Query, Axios, NestJS, MongoDB, PostgreSQL, Prisma, Redis, Kafka, gRPC, Microservices, and **Ollama** for local LLM/embedding inference.
+Stack used throughout: Next.js, React, Angular, JS, TS, Tailwind, Redux, React Query, Axios, NestJS, MongoDB, PostgreSQL, Prisma, Redis, Kafka, gRPC, Microservices, and **Ollama** for local AI models and embeddings.
 
 ## How this repo is organized
 
@@ -15,18 +15,18 @@ week-4-production-ai-scale-quality/  Production AI — Scale & Quality
 
 Each week folder has 7-9 `day-NN-<title>/` folders. Each day folder starts with a `README.md` that has:
 
-- **What to build** — the concrete feature for that day
-- **Deep-dive topics** — the concepts to actually understand, not just copy-paste
-- **Stack** — which tools from the list above apply
+- **What to build** — the feature for that day, in plain words
+- **Deep-dive topics** — the ideas to actually understand, not just copy-paste
+- **Stack** — which tools from the list above are used
 
-Once a day's project is actually built, its README gets **4 more sections added** — this is the template every finished day follows, so update to match it (see `week-1-ai-foundations/day-01-llm-api-integration/README.md` for a full example):
+Once a day's project is built, its README gets **4 more sections added**. Every finished day follows this same template (see `week-1-ai-foundations/day-01-llm-api-integration/README.md` as a full example). All writing uses simple, plain English — short sentences, easy words, easy to read:
 
-1. **Explain it like I'm 10** — the same feature explained with a simple everyday analogy, no jargon
-2. **How it flows (diagram)** — a Mermaid diagram (GitHub renders it natively, no image file needed) showing the request/response flow step by step
-3. **If someone wakes you up at midnight and quizzes you** — a rehearsed Q&A cheat sheet: the questions someone would likely ask about the project, with short clear answers, so you can explain it on the spot without re-reading the code
-4. **Using other models (hints)** — brief hints/examples for adapting the same feature to other AI models and providers beyond Ollama — hosted APIs (OpenAI, Claude, Gemini, Groq, Mistral) and other local runners (LM Studio, vLLM, llama.cpp) — just enough to point the direction, not a full build-out
+1. **Explain it like I'm 10** — the same feature explained with a simple, everyday example, no hard words
+2. **How it flows (diagram)** — a Mermaid diagram (GitHub shows it directly, no image file needed) showing the steps from request to reply
+3. **If someone wakes you up at midnight and quizzes you** — a practice Q&A list: the questions someone would likely ask about the project, with short, clear answers, so you can explain it on the spot without opening the code
+4. **Using other AI models (hints)** — short hints and examples for using the same feature with other AI models and providers beyond Ollama — hosted APIs (OpenAI, Claude, Gemini, Groq, Mistral) and other local tools (LM Studio, vLLM, llama.cpp) — just enough to point the way, not a full build
 
-Plus the existing **Deep dive: how it actually works** section stays as the detailed technical walkthrough — the 4 sections above are added alongside it, not instead of it.
+The existing **Deep dive: how it actually works** section stays too, as the detailed technical walkthrough. The 4 sections above are added next to it, not instead of it.
 
 ## Setup: Ollama
 
@@ -48,7 +48,7 @@ Plus the existing **Deep dive: how it actually works** section stays as the deta
 | Day | Week | Title | Category | Path |
 |-----|------|-------|----------|------|
 | 1 | 1 | ✅ LLM API integration | Frontend | `week-1-ai-foundations/day-01-llm-api-integration` |
-| 2 | 1 | Prompt engineering basics | Frontend | `week-1-ai-foundations/day-02-prompt-engineering-basics` |
+| 2 | 1 | ✅ Prompt engineering basics | Frontend | `week-1-ai-foundations/day-02-prompt-engineering-basics` |
 | 3 | 1 | Streaming text responses | Frontend | `week-1-ai-foundations/day-03-streaming-text-responses` |
 | 4 | 1 | AI-powered search | Full Stack | `week-1-ai-foundations/day-04-ai-powered-search` |
 | 5 | 1 | Text summarization feature | Frontend | `week-1-ai-foundations/day-05-text-summarization-feature` |
