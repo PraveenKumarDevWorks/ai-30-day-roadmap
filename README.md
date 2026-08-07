@@ -57,7 +57,7 @@ The existing **Deep dive: how it actually works** section stays too, organized b
 | 5 | 1 | ✅ Text summarization feature | Frontend | `week-1-ai-foundations/day-05-text-summarization-feature` |
 | 6 | 1 | ✅ Sentiment analysis API | Backend | `week-1-ai-foundations/day-06-sentiment-analysis-api` |
 | 7 | 1 | ✅ Revision day | Full Stack | `week-1-ai-foundations/day-07-revision-day` |
-| 8 | 2 | Document ingestion pipeline | Backend | `week-2-rag-knowledge-features/day-08-document-ingestion-pipeline` |
+| 8 | 2 | ✅ Document ingestion pipeline | Backend | `week-2-rag-knowledge-features/day-08-document-ingestion-pipeline` |
 | 9 | 2 | Basic RAG chatbot | Full Stack | `week-2-rag-knowledge-features/day-09-basic-rag-chatbot` |
 | 10 | 2 | Conversation memory | Full Stack | `week-2-rag-knowledge-features/day-10-conversation-memory` |
 | 11 | 2 | Multi-doc RAG | Backend | `week-2-rag-knowledge-features/day-11-multi-doc-rag` |

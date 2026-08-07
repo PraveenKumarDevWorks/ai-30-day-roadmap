@@ -1,0 +1,22 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Same Unsupported() approach as Day 4 — Prisma still has no native vector
+// type, so this column exists in the real table but is off-limits to
+// Prisma's typed client methods. Everything touching it is raw SQL.
+model DocumentChunk {
+  id         Int      @id @default(autoincrement())
+  source     String
+  chunkIndex Int      @map("chunk_index")
+  content    String
+  embedding  Unsupported("vector(768)")?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("document_chunks")
+}
